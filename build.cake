@@ -1,8 +1,10 @@
 #tool nuget:?package=GitVersion.CommandLine&version=5.0.1
 #tool nuget:?package=OctopusTools&version=6.7.0
+#tool nuget:?package=coveralls.io&version=1.4.2
 
 #addin nuget:?package=Cake.Npm&version=0.17.0
 #addin nuget:?package=Cake.Curl&version=4.1.0
+#addin nuget:?package=Cake.Coverlet&version=2.3.4
 
 #load build/path.cake
 #load build/package.cake
@@ -10,7 +12,7 @@
 
 var target = Argument("Target", "Compile");
 var deployTo = Argument("DeployTo", "Test");
-var zipDeploymentUri = new Uri(Argument<string>("ZipDeploymentUri"));
+var zipDeploymentUri = new Uri(Argument<string>("ZipDeploymentUri", "http://localhost:5000"));
 
 Setup<PackageMetadata>(context => {
     var metadata = new PackageMetadata(
@@ -36,11 +38,21 @@ Task("Test")
             {
                 ResultsDirectory = Paths.TestResultsDirectory,
                 Logger = "trx"
+            },
+            new CoverletSettings
+            {
+                CollectCoverage = true,
+                CoverletOutputDirectory = Paths.CodeCoverageFilePath.GetDirectory(),
+                CoverletOutputName = Paths.CodeCoverageFilePath.GetFilename().ToString(),
+                CoverletOutputFormat = BuildSystem.IsRunningOnTeamCity 
+                    ? CoverletOutputFormat.teamcity 
+                    : CoverletOutputFormat.opencover
             });
     });
 
 Task("Publish-Test-Results")
     .IsDependentOn("Test")
+    .WithCriteria(BuildSystem.IsRunningOnTeamCity)
     .Does(() => {
         foreach(var testResultFile in GetFiles($"{Paths.TestResultsDirectory}/*.trx"))
         {

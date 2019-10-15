@@ -11,4 +11,7 @@ public static class Paths
     public static DirectoryPath PublishDirectory => "publish";
 
     public static DirectoryPath TestResultsDirectory => "testResults";
+
+    public static FilePath CodeCoverageFilePath => 
+        TestResultsDirectory + "coverage.xml";
 }
