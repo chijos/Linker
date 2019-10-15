@@ -155,8 +155,16 @@ Task("Set-Build-Number")
         TeamCity.SetBuildNumber(package.Version);
     });
 
+Task("Publish-Build-Artifact")
+    .IsDependentOn("Package-Zip")
+    .WithCriteria(BuildSystem.IsRunningOnTeamCity)
+    .Does<PackageMetadata>(package => {
+        TeamCity.PublishArtifacts(package.FullPath);
+    });
+
 Task("Deploy-CI")
     .IsDependentOn("Deploy-Zip")
-    .IsDependentOn("Set-Build-Number");
+    .IsDependentOn("Set-Build-Number")
+    .IsDependentOn("Publish-Build-Artifact");
 
 RunTarget(target);
