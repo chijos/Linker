@@ -42,7 +42,7 @@ Task("Test")
 Task("Publish-Test-Results")
     .IsDependentOn("Test")
     .Does(() => {
-        foreach(var testResultFile in GetFiles($"{Paths.TestResultsDirectory}/**.trx"))
+        foreach(var testResultFile in GetFiles($"{Paths.TestResultsDirectory}/*.trx"))
         {
             TeamCity.ImportData("vstest", testResultFile.FullPath);
         }
