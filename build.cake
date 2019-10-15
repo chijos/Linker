@@ -44,7 +44,7 @@ Task("Publish-Test-Results")
     .Does(() => {
         foreach(var testResultFile in GetFiles($"{Paths.TestResultsDirectory}/**.trx"))
         {
-            TeamCity.ImportData("mstest", testResultFile.FullPath);
+            TeamCity.ImportData("vstest", testResultFile.FullPath);
         }
     });
 
