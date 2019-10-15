@@ -10,7 +10,7 @@
 
 var target = Argument("Target", "Compile");
 var deployTo = Argument("DeployTo", "Test");
-var zipDeploymentUri = Argument<string>("ZipDeploymentUri");
+var zipDeploymentUri = new Uri(Argument<string>("ZipDeploymentUri"));
 
 Setup<PackageMetadata>(context => {
     var metadata = new PackageMetadata(
