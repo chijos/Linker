@@ -9,6 +9,7 @@
 #load build/url.cake
 
 var target = Argument("Target", "Compile");
+var deployTo = Argument("DeployTo", "Test");
 
 Setup<PackageMetadata>(context => {
     var metadata = new PackageMetadata(
@@ -71,6 +72,8 @@ Task("Package-Octopus")
     .Does<PackageMetadata>(package => {
         CleanDirectory(package.OutputDirectory);
 
+        package.Extension = "nupkg";
+
         DotNetCorePublish(
             Paths.WebProjectFile.FullPath, 
             new DotNetCorePublishSettings {
@@ -101,6 +104,46 @@ Task("Deploy-Zip")
                 ArgumentCustomization = args => args.Append("--fail"),
                 Username = EnvironmentVariable("DeploymentUser"),
                 Password = EnvironmentVariable("DeploymentPassword")
+            });
+    });
+
+Task("Deploy-Octopus")
+    .IsDependentOn("Package-Octopus")
+    .Does<PackageMetadata>(package => {
+
+        const string apiKey = "API-W09OVPHTQA2JO7KEV5WAVFJY3W";
+
+        OctoPush(
+            Urls.OctopusDeploymentEndpoint.AbsoluteUri, 
+            apiKey,
+            package.FullPath,
+            new OctopusPushSettings 
+            { 
+                EnableServiceMessages = true,
+                ReplaceExisting = true
+            });
+
+        OctoCreateRelease(
+            "Linker-1",
+            new CreateReleaseSettings
+            {
+                Server = Urls.OctopusDeploymentEndpoint.AbsoluteUri,
+                ApiKey = apiKey,
+                ReleaseNumber = package.Version,
+                DefaultPackageVersion = package.Version,
+                IgnoreExisting = true
+            });
+
+        OctoDeployRelease(
+            Urls.OctopusDeploymentEndpoint.AbsoluteUri,
+            apiKey,
+            "Linker-1",
+            deployTo,
+            package.Version,
+            new OctopusDeployReleaseDeploymentSettings
+            {
+                EnableServiceMessages = true,
+                WaitForDeployment = true
             });
     });
 
