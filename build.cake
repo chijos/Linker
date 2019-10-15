@@ -148,4 +148,15 @@ Task("Deploy-Octopus")
             });
     });
 
+Task("Set-Build-Number")
+    .IsDependentOn("Version")
+    .WithCriteria(BuildSystem.IsRunningOnTeamCity)
+    .Does<PackageMetadata>(package => {
+        TeamCity.SetBuildNumber(package.Version);
+    });
+
+Task("Deploy-CI")
+    .IsDependentOn("Deploy-Zip")
+    .IsDependentOn("Set-Build-Number");
+
 RunTarget(target);
