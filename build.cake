@@ -26,7 +26,27 @@ Task("Compile")
 
 Task("Test")
     .IsDependentOn("Compile")
-    .Does(() => DotNetCoreTest(Paths.TestProjectFile.FullPath));
+    .Does(() => {
+
+        CleanDirectory(Paths.TestResultsDirectory);
+
+        DotNetCoreTest(
+            Paths.TestProjectFile.FullPath,
+            new DotNetCoreTestSettings
+            {
+                ResultsDirectory = Paths.TestResultsDirectory,
+                Logger = "trx"
+            });
+    });
+
+Task("Publish-Test-Results")
+    .IsDependentOn("Test")
+    .Does(() => {
+        foreach(var testResultFile in GetFiles($"{Paths.TestResultsDirectory}/**.trx"))
+        {
+            TeamCity.ImportData("mstest", testResultFile.FullPath);
+        }
+    });
 
 Task("Version")
     .Does<PackageMetadata>(package => {
@@ -165,6 +185,7 @@ Task("Publish-Build-Artifact")
 Task("Deploy-CI")
     .IsDependentOn("Deploy-Zip")
     .IsDependentOn("Set-Build-Number")
-    .IsDependentOn("Publish-Build-Artifact");
+    .IsDependentOn("Publish-Build-Artifact")
+    .IsDependentOn("Publish-Test-Results");
 
 RunTarget(target);
