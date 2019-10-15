@@ -10,6 +10,7 @@
 
 var target = Argument("Target", "Compile");
 var deployTo = Argument("DeployTo", "Test");
+var zipDeploymentUri = Argument<string>("ZipDeploymentUri");
 
 Setup<PackageMetadata>(context => {
     var metadata = new PackageMetadata(
@@ -98,7 +99,7 @@ Task("Deploy-Zip")
     .Does<PackageMetadata>(package => {
         CurlUploadFile(
             package.FullPath, 
-            Urls.ZipDeploymentEndpoint,
+            zipDeploymentUri,
             new CurlSettings
             {
                 ArgumentCustomization = args => args.Append("--fail"),
